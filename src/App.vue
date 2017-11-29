@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app class="bgimg">
     <v-container :class="{fluid:isFluid}">
       <v-layout row>
         <v-flex>
@@ -23,18 +23,21 @@ export default {
   components: {
     "home-header": HomeHeader
   },
-  mounted() {
-    if (this.$route.name !== "Home" && this.$route.name !== "All") {
+  updated() {
+    if (this.$route.path !== "/") {
       this.isFluid = true
       document.querySelector(".container").style.padding = "0"
+      document.getElementById("app").style.backgroundImage = "none"
+      document
+        .querySelector(".toolbar")
+        .classList.add("grey", "darken-4", "elevation-15", "mt-1")
     } else {
-      // let myIndex = Math.floor(Math.random() * 2)
-      // console.log(myIndex, this.bgImg[myIndex])
+      this.isFluid = false
       document.getElementById("app").style.backgroundImage =
-        "url('./src/assets/pancakes.jpeg)"
-      // document.getElementById("app").style.backgroundSize = "cover"
-      // document.getElementById("app").style.backgroundPosition = "center"
-      // document.getElementById("app").style.backgroundRepeat = "no-repeat"
+        "url('./src/assets/pancakes.jpeg')"
+      document
+        .querySelector(".toolbar")
+        .classList.remove("elevation-15", "mt-1", "grey", "darken-4")
     }
   }
 }
@@ -42,10 +45,10 @@ export default {
 
 
 <style scoped>
-/* #app {
+.bgimg {
   background-image: url("./assets/pancakes.jpeg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-} */
+}
 </style>
