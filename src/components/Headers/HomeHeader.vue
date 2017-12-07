@@ -1,15 +1,24 @@
 <template>
-<v-container fluid>
-  <v-layout>
+<v-container fluid> 
+  <v-layout row>
     <v-flex>
       <v-toolbar class="transparent" dark>
-        <v-toolbar-side-icon left class="hidden-md-and-up" @click="sideNav=!sideNav"></v-toolbar-side-icon>
+        <v-toolbar-side-icon 
+        left class="hidden-md-and-up" 
+        @click="sideNav=!sideNav"
+        ></v-toolbar-side-icon>
         <v-toolbar-title style="cursor:pointer" to="">
           <router-link to="/" tag="span">RatingsApp</router-link>
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items class="hidden-sm-and-down">
-          <v-btn v-for="item in menu" :key="item.title" class="transparent elevation-0" :to="item.link" v-if="item.show===true">
+          <v-btn 
+          v-for="item in menu" 
+          :key="item.title" 
+          class="transparent elevation-0" 
+          :to="item.link" 
+          v-if="item.show===true" 
+          @click.native="logout(item.title)">
           <v-icon left dark v-if="item.show===true">{{item.icon}}</v-icon> {{item.title}}
           </v-btn>
         </v-toolbar-items>
@@ -17,7 +26,7 @@
 
       <v-navigation-drawer v-model="sideNav" absolute temporary>
         <v-list>
-          <v-list-tile v-for="item in menu" :key="item.title" :to="item.link">
+          <v-list-tile v-if="item.show===true" v-for="item in menu" :key="item.title" :to="item.link" @click="logout(item.title)">
             <v-list-tile-action>
               <v-icon>{{item.icon}}</v-icon>
             </v-list-tile-action>
@@ -37,16 +46,34 @@
 
 
 <script>
+import { CognitoUserPool, CognitoUser } from "amazon-cognito-identity-js";
 export default {
   data() {
     return {
       sideNav: false
+    };
+  },
+  methods: {
+    logout(title) {
+      if (title === "Logout") {
+        let userPool = new CognitoUserPool({
+          UserPoolId: "ap-southeast-2_4hP69ss9p",
+          ClientId: "64f654vu8d5vn5fgma9qjct1ha"
+        });
+        let cognitoUser = new CognitoUser({
+          Username: userPool.getCurrentUser().getUsername(),
+          Pool: userPool
+        });
+        cognitoUser.signOut();
+        this.$store.dispatch("commitShowLoginSignup");
+        this.$router.push("/");
+      }
     }
   },
   computed: {
     menu() {
-      return this.$store.state.menu
+      return this.$store.state.menu;
     }
   }
-}
+};
 </script>

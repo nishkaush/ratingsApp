@@ -1,7 +1,7 @@
-import Vue from "vue"
-import Vuex from "Vuex"
+import Vue from "vue";
+import Vuex from "Vuex";
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 export const store = new Vuex.Store({
   state: {
@@ -41,14 +41,22 @@ export const store = new Vuex.Store({
   mutations: {
     hideLoginSignup() {
       store.state.menu.forEach(e => {
-        e.show ? (e.show = false) : (e.show = true)
-      })
+        e.show ? (e.show = false) : (e.show = true);
+      });
+    },
+    showLoginSignup() {
+      store.state.menu.forEach(e => {
+        !e.show ? (e.show = true) : (e.show = false);
+      });
     }
   },
   actions: {
     commitHideLoginSignup(context) {
-      context.commit("hideLoginSignup")
+      context.commit("hideLoginSignup");
+    },
+    commitShowLoginSignup(context) {
+      context.commit("showLoginSignup");
     }
   },
   getter: {}
-})
+});

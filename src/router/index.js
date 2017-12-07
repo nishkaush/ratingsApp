@@ -1,15 +1,15 @@
-import Vue from "vue"
-import Router from "vue-router"
-import Home from "@/components/Home"
-import Login from "@/components/User/Login"
-import Signup from "@/components/User/Signup"
-import Logout from "@/components/User/Logout"
-import Profile from "@/components/User/Profile"
-import SearchResults from "@/components/General/SearchResults"
-import SingleBusiness from "@/components/General/SingleBusiness"
-import RegisterBusiness from "@/components/General/RegisterBusiness"
+import Vue from "vue";
+import Router from "vue-router";
+import Home from "@/components/Home";
+import Login from "@/components/User/Login";
+import Signup from "@/components/User/Signup";
+import Logout from "@/components/User/Logout";
+import Profile from "@/components/User/Profile";
+import SearchResults from "@/components/General/SearchResults";
+import SingleBusiness from "@/components/General/SingleBusiness";
+import RegisterBusiness from "@/components/General/RegisterBusiness";
 
-Vue.use(Router)
+Vue.use(Router);
 
 export default new Router({
   mode: "history",
@@ -60,4 +60,4 @@ export default new Router({
       component: Home
     }
   ]
-})
+});

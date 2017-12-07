@@ -7,9 +7,11 @@
       icon="warning" 
       v-model="alert" 
       transition="slide-y-transition"
-      >Oops! Something went wrong while signing up, please try again!</v-alert>
+      >{{alertText}}
+      </v-alert>
     </v-flex>
   </v-layout>
+
   <v-layout row>
     <v-flex xs12 sm8 offset-sm2 md6 offset-md3>
       <v-text-field 
@@ -18,6 +20,7 @@
       :rules="usernameRules"
       required v-model="signupData.username"
       ></v-text-field>
+
       <v-text-field 
       name="email" 
       label="email"
@@ -25,6 +28,7 @@
       type="email" 
       required v-model="signupData.email"
       ></v-text-field>
+
       <v-text-field 
       name="password" 
       label="password" 
@@ -33,9 +37,16 @@
       required v-model="signupData.password"
       ></v-text-field>
 
-      <v-btn block large dark class="mt-4 blue darken-3" @click="signup">Signup</v-btn>
+      <v-btn 
+      block large dark 
+      class="mt-4 blue darken-3" 
+      @click="signup" 
+      :loading="loadingIcon" 
+      :disabled="showSubmitButton"
+      >Signup</v-btn>
     </v-flex>
   </v-layout>
+
 </v-container>
 </template>
 
@@ -44,28 +55,27 @@
 import {
   CognitoUserPool,
   CognitoUserAttribute,
-  CognitoUser
-} from "amazon-cognito-identity-js"
-import { CognitoIdentityServiceProvider } from "aws-sdk"
+  CognitoUser,
+  AuthenticationDetails
+} from "amazon-cognito-identity-js";
 
 export default {
   data() {
     return {
+      loadingIcon: false,
       alert: false,
+      alertText: "",
       signupData: {
         email: "",
         password: "",
         username: ""
       },
       usernameRules: [
-        value => !!value || "Username is Required"
-        // value => {
-        //   const pattern = /\p{L}\p{M}\p{S}\p{N}\p{P}/
-        //   return (
-        //     pattern.test(value) ||
-        //     "Invalid username - can only be alphanumeric."
-        //   )
-        // }
+        value => !!value || "Username is Required",
+        value => {
+          const pattern = /^\S*$/;
+          return pattern.test(value) || "Username can't have spaces";
+        }
       ],
       passwordRules: [
         value => !!value || "Password is Required",
@@ -75,51 +85,84 @@ export default {
       emailRules: [
         value => !!value || "Email is Required",
         value => {
-          const pattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-          return pattern.test(value) || "Invalid e-mail."
+          const pattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+          return pattern.test(value) || "Invalid e-mail.";
         }
       ]
-    }
+    };
   },
   methods: {
     signup() {
-      if (
-        this.signupData.email &&
-        this.signupData.password &&
-        this.signupData.username
-      ) {
-        let userPool = new CognitoUserPool({
-          UserPoolId: "ap-southeast-2_I3SEJr7cx",
-          ClientId: "5dkkqd8eamlb3me4m9e35s8gtu"
-        })
-        let attributeList = [] //put attributes as objects into this array
+      this.loadingIcon = true;
+      let userPool = new CognitoUserPool({
+        UserPoolId: "ap-southeast-2_4hP69ss9p",
+        ClientId: "64f654vu8d5vn5fgma9qjct1ha"
+      });
 
-        let attributeEmail = new CognitoUserAttribute({
-          Name: "email",
-          Value: this.signupData.email
-        })
+      let attributeEmail = new CognitoUserAttribute({
+        Name: "email",
+        Value: this.signupData.email
+      });
+      let attributeList = [attributeEmail]; //put attributes as objects into this array
 
-        attributeList.push(attributeEmail)
-
-        userPool.signUp(
-          this.signupData.username,
-          this.signupData.password,
-          attributeList,
-          null,
-          (err, result) => {
-            if (err) {
-              console.log(err)
-              return (this.alert = true)
-            }
-            console.log("result of signup is-->", result)
-            this.$store.dispatch("commitHideLoginSignup");
+      //signup the user and then log him in as well because cognito wont do it automatically
+      userPool.signUp(
+        this.signupData.username,
+        this.signupData.password,
+        attributeList,
+        null,
+        (err, result) => {
+          if (err) {
+            this.loadingIcon = false;
+            this.alert = true;
+            this.alertText = "Username or Email is already taken";
+            return;
           }
-        )
-        // ***signup function ends here****
-      }
+          //now time to log the user in
+          let vm = this;
+          let cognitoUser = new CognitoUser({
+            Username: this.signupData.username,
+            Pool: userPool
+          });
+
+          let authencationDetails = new AuthenticationDetails({
+            Username: this.signupData.username,
+            Password: this.signupData.password
+          });
+          cognitoUser.authenticateUser(authencationDetails, {
+            onSuccess(result) {
+              vm.loadingIcon = false;
+              vm.alert = false;
+              vm.confirmText = true;
+              vm.$store.dispatch("commitHideLoginSignup");
+              vm.$router.push("/profile");
+            },
+            onFailure(err) {
+              vm.alert = true;
+              vm.alertText = "Couldn't get you access, try again later";
+            }
+          });
+        }
+      ); // *** AWS signup function ends here****
     } //signup method ends here
+  },
+  computed: {
+    showSubmitButton() {
+      const pattern1 = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      let a = pattern1.test(this.signupData.email);
+
+      const pattern2 = /^\S*$/;
+      let b = pattern2.test(this.signupData.username);
+
+      let c = this.signupData.password.length >= 8;
+
+      if (a && b && c) {
+        return false;
+      }
+      return true;
+    }
   }
-}
+};
 </script>
 
 
