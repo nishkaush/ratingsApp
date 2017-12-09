@@ -1,8 +1,14 @@
 <template>
-<v-container class="mt-5">
+<v-container class="mt-4">
+  <v-layout>
+    <v-flex>
+    <v-alert outline color="error" icon="warning" v-if="errorMessage">
+      {{errorMessage}}
+    </v-alert>
+    </v-flex>
+  </v-layout>
   <v-layout row>
-    <v-flex xs12 sm10 offset-sm1 md8 offset-md2>
-
+    <v-flex xs12 sm10 offset-sm1 md8 offset-md2 v-if="!successPage">
       <v-form id="form">
         <v-text-field label="Business Name" required v-model="businessInfo.name" :rules="inputRules"></v-text-field>
         <v-select  label="Choose a Business Type" :items="categories" v-model="businessInfo.type"></v-select>
@@ -22,7 +28,7 @@
         </div>
 
         <div class="text-xs-center">
-          <img :src="imageUrl" height="200" v-if="imageUrl">
+          <img :src="thumbnailUrl" height="200" v-if="thumbnailUrl">
         </div>
 
         <v-container fluid class="pl-0 pr-0">
@@ -47,7 +53,6 @@
         
         <v-text-field label="Phone Number" mask="phone" v-model="businessInfo.phone" required :rules="inputRules"></v-text-field>
         <v-text-field label="Business Description" textarea v-model="businessInfo.description"></v-text-field>
-
         
         <v-container>
           <v-layout>
@@ -81,26 +86,46 @@
           <v-btn dark large class="blue darken-3" @click.prevent="submitForm" :disabled="showSubmitBtn">Submit</v-btn>
           <v-btn dark large class="blue darken-3" @click="resetForm">Clear Form</v-btn>
         </div>
-        
-      </v-form>
 
+      </v-form>
     </v-flex>
+
+
+    <v-flex v-else>
+      <success-confirm :info="businessInfo"></success-confirm>
+    </v-flex>
+
+
   </v-layout>
 </v-container>
 </template>
 
 
 <script>
+import {
+  CognitoUserPool,
+  CognitoUser,
+  AuthenticationDetails
+} from "amazon-cognito-identity-js";
+import axios from "axios";
+import SuccessConfirm from "./SuccessConfirm.vue";
+import AWS from "aws-sdk";
+
 export default {
   data() {
     return {
-      fullImage: "",
-      imageUrl: "",
+      errorMessage: "",
+      thumbnailUrl: "",
+      successPage: false,
       uploadedFileName: "",
       inputRules: [val => (!!val ? true : "Required")],
       categories: ["Bars", "Restaurants", "Takeaway", "Clubs", "Other"],
       times: [],
       businessInfo: {
+        owner: "",
+        businessID: "",
+        fullImage: "",
+        imageUrl: "",
         name: "",
         type: "",
         location: {
@@ -125,9 +150,79 @@ export default {
     };
   },
   methods: {
-    submitForm() {
-      console.log(this.businessInfo);
+    offToDDB(url, Id, session, username) {
+      let vm = this;
+      let token = session.getIdToken().getJwtToken();
+      this.businessInfo.owner = username;
+      this.businessInfo.imageUrl = url;
+      this.businessInfo.businessID = Id;
+
+      let myLink =
+        "https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/registerbusiness";
+      axios
+        .post(myLink, vm.businessInfo, {
+          headers: { Authorization: token }
+        })
+        .then(res => {
+          !res.data.errorMessage
+            ? (vm.successPage = true)
+            : (this.errorMessage = "Error while saving entry, Try later!");
+        })
+        .catch(err => {
+          this.errorMessage = "Error in saving entry, Try again later!";
+        });
     },
+
+    submitForm() {
+      let vm = this;
+      let userPool = new CognitoUserPool({
+        UserPoolId: "ap-southeast-2_4hP69ss9p",
+        ClientId: "64f654vu8d5vn5fgma9qjct1ha"
+      });
+      let cognitoUser = userPool.getCurrentUser();
+      let username = cognitoUser.getUsername();
+      if (cognitoUser !== null) {
+        return cognitoUser.getSession((err, session) => {
+          if (err) {
+            return (this.errorMessage =
+              "No Active Session. Please Login Again.");
+          }
+          if (session.isValid() === true) {
+            //check if fullimage even exists or not
+            if (vm.businessInfo.fullImage) {
+              return vm.offToSSS(session, username);
+            }
+            return vm.offToDDB("NA", `bus_${Math.random()}`, session, username);
+          }
+          return (this.errorMessage = "No Active Session. Please Login Again!");
+        });
+      }
+      return (this.errorMessage = "No Active Session. Please Login Again!");
+    },
+
+    offToSSS(session, username) {
+      let vm = this;
+      let s3 = new AWS.S3({
+        apiVersion: "2006-03-01",
+        accessKeyId: "AKIAJI2XFQR6GD2YP2UA",
+        secretAccessKey: "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"
+      });
+      let params = {
+        Bucket: "ratings-app-business-upload",
+        Key: `bus_${Math.random()}`,
+        Body: vm.businessInfo.fullImage,
+        ACL: "public-read",
+        ContentType: "*"
+      };
+      return s3.upload(params, (err, data) => {
+        if (err) {
+          return (this.errorMessage =
+            "Error Uploading Image, Please Try later.");
+        }
+        vm.offToDDB(data.Location, data.Key, session, username);
+      });
+    },
+
     resetForm() {
       console.log("clicked");
       document.getElementById("form").reset();
@@ -136,15 +231,15 @@ export default {
       this.$refs.uglyInputBtn.click();
     },
     onFilePicked(e) {
-      const file = event.target.files;
       //file is an array of files
+      const file = event.target.files;
       //in our case of single file, we can access it as file[0]
       //lets store it first for later upload
-      this.fullImage = file[0];
+      this.businessInfo.fullImage = file[0];
       this.uploadedFileName = file[0].name;
       const fileReader = new FileReader();
       fileReader.addEventListener("load", () => {
-        this.imageUrl = fileReader.result;
+        this.thumbnailUrl = fileReader.result;
       });
       //the following task could take few seconds
       //we have installed event listener above to wait for it
@@ -152,6 +247,9 @@ export default {
       //which is a base64 url encoded string which acts as src for our image
       fileReader.readAsDataURL(file[0]);
     }
+  },
+  components: {
+    "success-confirm": SuccessConfirm
   },
   computed: {
     showSubmitBtn() {
@@ -198,7 +296,6 @@ export default {
         //beginning to derive info from google's response
         place.address_components.forEach(e => {
           if (e.types[0] === "street_number" || e.types[0] === "route") {
-            console.log("first if is running");
             let street = vm.businessInfo.location.street;
             street.length === 0
               ? (vm.businessInfo.location.street = e.long_name)

@@ -7,7 +7,7 @@ import Logout from "@/components/User/Logout";
 import Profile from "@/components/User/Profile";
 import SearchResults from "@/components/General/SearchResults";
 import SingleBusiness from "@/components/General/SingleBusiness";
-import RegisterBusiness from "@/components/General/RegisterBusiness";
+import RegisterBusiness from "@/components/General/RegisBusiness/RegisterBusiness";
 
 Vue.use(Router);
 
