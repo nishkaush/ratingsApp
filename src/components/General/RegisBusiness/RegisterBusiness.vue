@@ -1,8 +1,8 @@
 <template>
-<v-container class="mt-4">
+<v-container class="mt-4" id="regBusContainer">
   <v-layout>
     <v-flex>
-    <v-alert outline color="error" icon="warning" v-if="errorMessage">
+    <v-alert outline color="error" icon="warning" :value="errorMessage">
       {{errorMessage}}
     </v-alert>
     </v-flex>
@@ -180,8 +180,8 @@ export default {
         ClientId: "64f654vu8d5vn5fgma9qjct1ha"
       });
       let cognitoUser = userPool.getCurrentUser();
-      let username = cognitoUser.getUsername();
       if (cognitoUser !== null) {
+        let username = cognitoUser.getUsername();
         return cognitoUser.getSession((err, session) => {
           if (err) {
             return (this.errorMessage =
@@ -204,8 +204,8 @@ export default {
       let vm = this;
       let s3 = new AWS.S3({
         apiVersion: "2006-03-01",
-        accessKeyId: "AKIAJI2XFQR6GD2YP2UA",
-        secretAccessKey: "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"
+        accessKeyId: "******",
+        secretAccessKey: "*******"
       });
       let params = {
         Bucket: "ratings-app-business-upload",
