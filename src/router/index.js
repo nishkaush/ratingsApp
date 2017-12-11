@@ -45,7 +45,7 @@ export default new Router({
       component: SearchResults
     },
     {
-      path: "/singleBusiness",
+      path: "/singleBusiness/:busId",
       name: "SingleBusiness",
       component: SingleBusiness
     },

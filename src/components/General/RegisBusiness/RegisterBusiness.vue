@@ -1,12 +1,5 @@
 <template>
 <v-container class="mt-4" id="regBusContainer">
-  <v-layout>
-    <v-flex>
-    <v-alert outline color="error" icon="warning" :value="errorMessage">
-      {{errorMessage}}
-    </v-alert>
-    </v-flex>
-  </v-layout>
   <v-layout row>
     <v-flex xs12 sm10 offset-sm1 md8 offset-md2 v-if="!successPage">
       <v-form id="form">
@@ -94,8 +87,14 @@
     <v-flex v-else>
       <success-confirm :info="businessInfo"></success-confirm>
     </v-flex>
+  </v-layout>
 
-
+    <v-layout>
+    <v-flex>
+    <v-alert outline color="error" icon="warning" :value="errorMessage">
+      {{errorMessage}}
+    </v-alert>
+    </v-flex>
   </v-layout>
 </v-container>
 </template>
@@ -166,7 +165,8 @@ export default {
         .then(res => {
           !res.data.errorMessage
             ? (vm.successPage = true)
-            : (this.errorMessage = "Error while saving entry, Try later!");
+            : console.log(res.data);
+          // (this.errorMessage = "Error while saving entry, Try later!")
         })
         .catch(err => {
           this.errorMessage = "Error in saving entry, Try again later!";
