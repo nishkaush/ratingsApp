@@ -1,9 +1,10 @@
 <template>
-  <v-app class="bgimg">
-    <v-container :fluid="isFluid">
+  <v-app :class="bgClass">
+
+    <v-container :fluid="isFluid" class="pl-0 pr-0 pt-0">
       <v-layout row>
         <v-flex>
-          <home-header></home-header>
+          <home-header :headColor="isFluid"></home-header>
           <router-view></router-view>
         </v-flex>
       </v-layout>
@@ -17,43 +18,30 @@ import HomeHeader from "./components/Headers/HomeHeader.vue";
 export default {
   data() {
     return {
-      isFluid: false
+      isFluid: false,
+      bgClass: "bgimg"
     };
-  },
-  methods: {
-    HideBgAndExpandHeader() {
-      document.querySelector(".container").style.padding = "0";
-      document.getElementById("app").style.backgroundImage = "none";
-      this.isFluid = true;
-      document
-        .querySelector(".toolbar")
-        .classList.add("grey", "darken-4", "elevation-15");
-    },
-    showBgAndShrinkHeader() {
-      this.isFluid = false;
-      document.getElementById("app").style.backgroundImage =
-        "url('./src/assets/pancakes.jpeg')";
-      document
-        .querySelector(".toolbar")
-        .classList.remove("elevation-15", "mt-1", "grey", "darken-4");
-    }
   },
   components: {
     "home-header": HomeHeader
   },
   mounted() {
     if (this.$route.path !== "/") {
-      this.HideBgAndExpandHeader();
+      this.isFluid = true;
+      this.bgClass = "nobg";
     } else {
-      this.showBgAndShrinkHeader();
+      this.isFluid = false;
+      this.bgClass = "bgimg";
     }
   },
   watch: {
     $route(to, from) {
       if (to.path !== "/") {
-        this.HideBgAndExpandHeader();
+        this.isFluid = true;
+        this.bgClass = "nobg";
       } else {
-        this.showBgAndShrinkHeader();
+        this.isFluid = false;
+        this.bgClass = "bgimg";
       }
     }
   }
@@ -63,9 +51,12 @@ export default {
 
 <style scoped>
 .bgimg {
-  /* background-image: url("./assets/pancakes.jpeg"); */
+  background-image: url("./assets/pancakes.jpeg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+.nobg {
+  background-image: none;
 }
 </style>

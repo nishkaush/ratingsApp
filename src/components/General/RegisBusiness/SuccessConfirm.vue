@@ -31,7 +31,7 @@ export default {
   props: ["info"],
   methods: {
     showSingleBusiness(Id) {
-      this.$router.push(`/singleBusiness/${Id}`);
+      this.$router.push({ path: `/singleBusiness/${Id}` });
     }
   }
 };

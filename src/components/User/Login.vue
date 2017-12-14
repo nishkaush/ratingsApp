@@ -98,7 +98,7 @@ export default {
           vm.loading = false;
           vm.error = false;
           vm.$store.dispatch("commitHideLoginSignup");
-          vm.$router.push("/profile");
+          vm.$router.push({ path: "/" });
         },
         onFailure(err) {
           vm.error = true;

@@ -76,7 +76,13 @@
         </v-container>
 
         <div class="text-xs-center mt-4">        
-          <v-btn dark large class="blue darken-3" @click.prevent="submitForm" :disabled="showSubmitBtn">Submit</v-btn>
+          <v-btn 
+          dark large 
+          class="blue darken-3" 
+          @click.prevent="submitForm" 
+          :disabled="showSubmitBtn"
+          :loading="loading"
+          >Submit</v-btn>
           <v-btn dark large class="blue darken-3" @click="resetForm">Clear Form</v-btn>
         </div>
 
@@ -109,10 +115,12 @@ import {
 import axios from "axios";
 import SuccessConfirm from "./SuccessConfirm.vue";
 import AWS from "aws-sdk";
+import uuidv4 from "uuid/v4";
 
 export default {
   data() {
     return {
+      loading: false,
       errorMessage: "",
       thumbnailUrl: "",
       successPage: false,
@@ -136,6 +144,7 @@ export default {
         },
         phone: "1234567890",
         description: "",
+        ratings: [],
         hours: [
           { day: "Monday", open: "", close: "" },
           { day: "Tuesday", open: "", close: "" },
@@ -163,10 +172,11 @@ export default {
           headers: { Authorization: token }
         })
         .then(res => {
-          !res.data.errorMessage
-            ? (vm.successPage = true)
-            : console.log(res.data);
-          // (this.errorMessage = "Error while saving entry, Try later!")
+          if (!res.data.errorMessage) {
+            vm.loading = false;
+            return (vm.successPage = true);
+          }
+          this.errorMessage = "Error while saving entry, Try later!";
         })
         .catch(err => {
           this.errorMessage = "Error in saving entry, Try again later!";
@@ -175,6 +185,7 @@ export default {
 
     submitForm() {
       let vm = this;
+      vm.loading = true;
       let userPool = new CognitoUserPool({
         UserPoolId: "ap-southeast-2_4hP69ss9p",
         ClientId: "64f654vu8d5vn5fgma9qjct1ha"
@@ -192,7 +203,7 @@ export default {
             if (vm.businessInfo.fullImage) {
               return vm.offToSSS(session, username);
             }
-            return vm.offToDDB("NA", `bus_${Math.random()}`, session, username);
+            return vm.offToDDB("NA", uuidv4(), session, username);
           }
           return (this.errorMessage = "No Active Session. Please Login Again!");
         });
@@ -209,7 +220,7 @@ export default {
       });
       let params = {
         Bucket: "ratings-app-business-upload",
-        Key: `bus_${Math.random()}`,
+        Key: uuidv4(),
         Body: vm.businessInfo.fullImage,
         ACL: "public-read",
         ContentType: "*"

@@ -14,18 +14,13 @@ Vue.use(Vuetify);
 
 Vue.config.productionTip = false;
 
-AWS.config.region = "ap-southeast-2";
-AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-  IdentityPoolId: "ap-southeast-2:4075dfd8-4f70-4ff3-abd0-1ff9680486da"
-});
-Vue.prototype.$AWSGlobalConfig = AWS.config.credentials;
-
 router.beforeEach((to, from, next) => {
   if (
     to.name !== "Home" &&
     to.name !== "Login" &&
     to.name !== "Signup" &&
-    to.name !== "RegisterBusiness"
+    to.name !== "SingleBusiness" &&
+    to.name !== "SearchResults"
   ) {
     console.log("beforeeAch is running");
     let userPool = new CognitoUserPool({
@@ -34,9 +29,7 @@ router.beforeEach((to, from, next) => {
     });
 
     if (userPool.getCurrentUser() === null) {
-      //instead of relying on facebook, we will use amazon to authenticate
-      // next()
-      AWS.config.credentials.sessionToken ? next() : next({ path: "/" });
+      next({ path: "/" });
     } else {
       userPool.getCurrentUser().getSession((err, session) => {
         if (err) {

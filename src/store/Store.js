@@ -1,67 +1,46 @@
 import Vue from "vue";
 import Vuex from "Vuex";
 import axios from "axios";
+import { CognitoUserPool } from "amazon-cognito-identity-js";
 
 Vue.use(Vuex);
 
+let userPool = new CognitoUserPool({
+  UserPoolId: "ap-southeast-2_4hP69ss9p",
+  ClientId: "64f654vu8d5vn5fgma9qjct1ha"
+});
+let loggedIn = "";
+userPool.getCurrentUser() === null ? (loggedIn = false) : (loggedIn = true);
+
 export const store = new Vuex.Store({
   state: {
-    info: {
-      owner: "reggy mailand",
-      businessID: "3ewvsdvwr343242",
-      imageUrl: "https://picsum.photos/700/400/?random",
-      name: "Nandos Broadway Clinic",
-      type: "Restaurant",
-      location: {
-        street: "345 Boulevard Street",
-        city: "Sydney",
-        state: "NSw",
-        country: "Australia",
-        postcode: "Dfu2009"
-      },
-      phone: "0433872859",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium placeat modi, quidem consequuntur perspiciatis dolorem! Excepturi velit recusandae eaque nihil a! Tempore, illum repellendus deserunt amet quibusdam tenetur voluptas incidunt?",
-      hours: [
-        { day: "Monday", open: "4:00", close: "2:00" },
-        { day: "Tuesday", open: "3:00", close: "2:00" },
-        { day: "Wednesday", open: "5:00", close: "1:00" },
-        { day: "Thursday", open: "2:00", close: "9:00" },
-        { day: "Friday", open: "6:00", close: "2:00" },
-        { day: "Saturday", open: "2:00", close: "5:00" },
-        { day: "Sunday", open: "5:00", close: "9:00" }
-      ]
-    },
+    userPhoto: "",
+    searchResults: "",
+    info: "",
     menu: [
       {
         icon: "lock_open",
         link: "/login",
         title: "Login",
-        show: true
+        show: !loggedIn
       },
       {
         icon: "supervisor_account",
         link: "/signup",
         title: "Signup",
-        show: true
-      },
-      {
-        icon: "account_circle",
-        link: "/profile",
-        title: "Profile",
-        show: false
+        show: !loggedIn
       },
       {
         icon: "power_settings_new",
         link: "/logout",
         title: "Logout",
-        show: false
+        show: loggedIn
       },
       {
         icon: "place",
         link: "/registerBusiness",
         title: "Register Your Business",
-        show: false
+        show: loggedIn
       }
     ]
   },
@@ -77,16 +56,69 @@ export const store = new Vuex.Store({
       });
     },
     singleBusinessInfo(state, payload) {
-      console.log("singleBusinessInfo is running", payload);
       state.info = payload;
+      state.info.reviews = payload.reviews.reverse();
+    },
+    updateAllReviews(state, payload) {
+      state.info.reviews = payload.reverse();
+    },
+    searchResults(state, payload) {
+      let finalArr = payload.Items.map(e => {
+        let ratingArr = e.reviews.map(f => {
+          return f.rating;
+        });
+        let result = ratingArr.reduce((a, b) => {
+          return a + b;
+        }, 0);
+        e.overallRating = Math.round(result / ratingArr.length);
+        return e;
+      });
+      console.log("finalArr is --> ", finalArr);
+      state.searchResults = finalArr;
     }
   },
   actions: {
+    getSearchResults(context, payload) {
+      return axios
+        .get(payload.url, { headers: { Authorization: "token" } })
+        .then(res => {
+          console.log(res.data);
+          context.commit("searchResults", res.data);
+          return true;
+        })
+        .catch(err => {
+          console.log(err);
+          return false;
+        });
+    },
     commitHideLoginSignup(context) {
       context.commit("hideLoginSignup");
     },
     commitShowLoginSignup(context) {
       context.commit("showLoginSignup");
+    },
+    addNewRating(context, payload) {
+      let url =
+        "https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/addrating";
+      return axios
+        .post(url, payload.data, { headers: { Authorization: payload.token } })
+        .then(res => {
+          console.log(res.data);
+          return axios.get(
+            `https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/allreviews/${
+              payload.data.businessID
+            }`,
+            { headers: { Authorization: payload.token } }
+          );
+        })
+        .then(resp => {
+          console.log("get all reviews request", resp.data);
+          context.commit("updateAllReviews", resp.data.Item.reviews);
+          return true;
+        })
+        .catch(err => {
+          console.log("err from axios req", err);
+        });
     },
     getSingleBusiness(context, payload) {
       console.log("getsinglebbusiness is running", payload.url);
@@ -101,6 +133,5 @@ export const store = new Vuex.Store({
           return false;
         });
     }
-  },
-  getter: {}
+  }
 });

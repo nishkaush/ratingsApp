@@ -1,13 +1,14 @@
 <template>
-<v-container fluid> 
+<v-container fluid :class="{headerfull:headColor}"> 
   <v-layout row>
-    <v-flex>
-      <v-toolbar class="transparent" dark>
+    <v-flex xs12>
+
+      <v-toolbar :class="{transparent:!headColor}" dark>
         <v-toolbar-side-icon 
         left class="hidden-md-and-up" 
         @click="sideNav=!sideNav"
         ></v-toolbar-side-icon>
-        <v-toolbar-title style="cursor:pointer" to="">
+        <v-toolbar-title style="cursor:pointer">
           <router-link to="/" tag="span">RatingsApp</router-link>
         </v-toolbar-title>
         <v-spacer></v-spacer>
@@ -36,6 +37,7 @@
           </v-list-tile>
         </v-list>
       </v-navigation-drawer>
+
     </v-flex>
   </v-layout>
 </v-container>
@@ -48,6 +50,7 @@
 <script>
 import { CognitoUserPool, CognitoUser } from "amazon-cognito-identity-js";
 export default {
+  props: ["headColor"],
   data() {
     return {
       sideNav: false
@@ -66,7 +69,7 @@ export default {
         });
         cognitoUser.signOut();
         this.$store.dispatch("commitShowLoginSignup");
-        this.$router.push("/");
+        this.$router.push({ path: "/" });
       }
     }
   },
@@ -77,3 +80,16 @@ export default {
   }
 };
 </script>
+
+
+<style scoped>
+.transparent {
+  background: transparent;
+}
+
+.headerfull {
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0;
+}
+</style>

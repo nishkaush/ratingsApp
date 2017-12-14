@@ -134,8 +134,9 @@ export default {
               vm.loadingIcon = false;
               vm.alert = false;
               vm.confirmText = true;
+              let username = userPool.getCurrentUser().getUsername();
               vm.$store.dispatch("commitHideLoginSignup");
-              vm.$router.push("/profile");
+              vm.$router.push({ path: "/" });
             },
             onFailure(err) {
               vm.alert = true;
