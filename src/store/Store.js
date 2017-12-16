@@ -14,7 +14,10 @@ userPool.getCurrentUser() === null ? (loggedIn = false) : (loggedIn = true);
 
 export const store = new Vuex.Store({
   state: {
+    showResultsBtn: "",
     userPhoto: "",
+    username: "",
+    userEmail: "",
     searchResults: "",
     info: "",
     menu: [
@@ -31,6 +34,12 @@ export const store = new Vuex.Store({
         show: !loggedIn
       },
       {
+        icon: "mood",
+        link: "/profile",
+        title: "Profile",
+        show: loggedIn
+      },
+      {
         icon: "power_settings_new",
         link: "/logout",
         title: "Logout",
@@ -44,11 +53,15 @@ export const store = new Vuex.Store({
       }
     ]
   },
+
   mutations: {
     hideLoginSignup(state) {
       state.menu.forEach(e => {
         e.show ? (e.show = false) : (e.show = true);
       });
+    },
+    DefaultToNewUserPic(state, payload) {
+      state.userPhoto = payload.userPhoto;
     },
     showLoginSignup(state) {
       state.menu.forEach(e => {
@@ -58,6 +71,11 @@ export const store = new Vuex.Store({
     singleBusinessInfo(state, payload) {
       state.info = payload;
       state.info.reviews = payload.reviews.reverse();
+    },
+    updateUserPic(state, payload) {
+      state.userEmail = payload.userEmail;
+      state.userPhoto = payload.userPhoto;
+      state.username = payload.username;
     },
     updateAllReviews(state, payload) {
       state.info.reviews = payload.reverse();
@@ -73,26 +91,42 @@ export const store = new Vuex.Store({
         e.overallRating = Math.round(result / ratingArr.length);
         return e;
       });
-      console.log("finalArr is --> ", finalArr);
       state.searchResults = finalArr;
     }
   },
+
   actions: {
     getSearchResults(context, payload) {
       return axios
         .get(payload.url, { headers: { Authorization: "token" } })
         .then(res => {
-          console.log(res.data);
           context.commit("searchResults", res.data);
           return true;
         })
         .catch(err => {
-          console.log(err);
           return false;
         });
     },
-    commitHideLoginSignup(context) {
+    showProfileAfterLogin(context) {
       context.commit("hideLoginSignup");
+    },
+    commitHideLoginSignup(context, payload) {
+      let url =
+        "https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/registeruser";
+      let myobj = {
+        username: payload.u,
+        userPhoto: payload.p,
+        userEmail: payload.e
+      };
+      return axios
+        .post(url, myobj, { headers: { Authorization: payload.t } })
+        .then(res => {
+          context.commit("hideLoginSignup");
+          return true;
+        })
+        .catch(err => {
+          return false;
+        });
     },
     commitShowLoginSignup(context) {
       context.commit("showLoginSignup");
@@ -103,7 +137,6 @@ export const store = new Vuex.Store({
       return axios
         .post(url, payload.data, { headers: { Authorization: payload.token } })
         .then(res => {
-          console.log(res.data);
           return axios.get(
             `https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/allreviews/${
               payload.data.businessID
@@ -112,22 +145,51 @@ export const store = new Vuex.Store({
           );
         })
         .then(resp => {
-          console.log("get all reviews request", resp.data);
           context.commit("updateAllReviews", resp.data.Item.reviews);
           return true;
         })
         .catch(err => {
-          console.log("err from axios req", err);
+          return false;
         });
     },
     getSingleBusiness(context, payload) {
-      console.log("getsinglebbusiness is running", payload.url);
       return axios
         .get(payload.url)
         .then(res => {
-          console.log("response back after axios request from ddb", res);
           context.commit("singleBusinessInfo", res.data.Item);
           return true;
+        })
+        .catch(err => {
+          return false;
+        });
+    },
+    getUserPic(context, payload) {
+      let url = `https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/getuserdetails/${
+        payload.username
+      }`;
+      let token = payload.token;
+      axios
+        .get(url, { headers: { Authorization: token } })
+        .then(res => {
+          context.commit("updateUserPic", res.data.Item);
+        })
+        .catch(err => {
+          return;
+        });
+    },
+
+    changeDefaultToNewPic(context, payload) {
+      let url = `https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/update-user-details`;
+      let token = payload.t;
+      let myobj = {
+        username: payload.u,
+        userPhoto: payload.p
+      };
+      return axios
+        .put(url, myobj, { headers: { Authorization: token } })
+        .then(res => {
+          return true;
+          context.commit("DefaultToNewUserPic", res.data.Attributes);
         })
         .catch(err => {
           return false;

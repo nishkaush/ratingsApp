@@ -31,6 +31,7 @@ export default {
   props: ["info"],
   methods: {
     showSingleBusiness(Id) {
+      this.$store.state.showResultsBtn = false;
       this.$router.push({ path: `/singleBusiness/${Id}` });
     }
   }

@@ -2,7 +2,7 @@
 <v-container class="mt-4" id="regBusContainer">
   <v-layout row>
     <v-flex xs12 sm10 offset-sm1 md8 offset-md2 v-if="!successPage">
-      <v-form id="form">
+      <v-form id="form" aria-autocomplete="off">
         <v-text-field label="Business Name" required v-model="businessInfo.name" :rules="inputRules"></v-text-field>
         <v-select  label="Choose a Business Type" :items="categories" v-model="businessInfo.type"></v-select>
         
@@ -161,6 +161,7 @@ export default {
     offToDDB(url, Id, session, username) {
       let vm = this;
       let token = session.getIdToken().getJwtToken();
+      this.businessInfo.name = this.businessInfo.name.toUpperCase();
       this.businessInfo.owner = username;
       this.businessInfo.imageUrl = url;
       this.businessInfo.businessID = Id;
@@ -203,7 +204,7 @@ export default {
             if (vm.businessInfo.fullImage) {
               return vm.offToSSS(session, username);
             }
-            return vm.offToDDB("NA", uuidv4(), session, username);
+            return vm.offToDDB("", uuidv4(), session, username);
           }
           return (this.errorMessage = "No Active Session. Please Login Again!");
         });
@@ -215,8 +216,8 @@ export default {
       let vm = this;
       let s3 = new AWS.S3({
         apiVersion: "2006-03-01",
-        accessKeyId: "******",
-        secretAccessKey: "*******"
+        accessKeyId: "*****",
+        secretAccessKey: "****"
       });
       let params = {
         Bucket: "ratings-app-business-upload",
@@ -227,16 +228,27 @@ export default {
       };
       return s3.upload(params, (err, data) => {
         if (err) {
-          return (this.errorMessage =
-            "Error Uploading Image, Please Try later.");
+          this.errorMessage = "Error Uploading Image, Please Try later.";
+          return;
         }
         vm.offToDDB(data.Location, data.Key, session, username);
       });
     },
 
     resetForm() {
-      console.log("clicked");
-      document.getElementById("form").reset();
+      this.businessInfo.hours.forEach(r => {
+        r.open = "";
+        r.close = "";
+      });
+      for (var item in this.businessInfo) {
+        if (item !== "location" && item !== "hours") {
+          this.businessInfo[item] = "";
+        } else if (item === "location") {
+          for (var i in this.businessInfo.location) {
+            this.businessInfo.location[i] = "";
+          }
+        }
+      }
     },
     onPickFile() {
       this.$refs.uglyInputBtn.click();
@@ -244,18 +256,12 @@ export default {
     onFilePicked(e) {
       //file is an array of files
       const file = event.target.files;
-      //in our case of single file, we can access it as file[0]
-      //lets store it first for later upload
       this.businessInfo.fullImage = file[0];
       this.uploadedFileName = file[0].name;
       const fileReader = new FileReader();
       fileReader.addEventListener("load", () => {
         this.thumbnailUrl = fileReader.result;
       });
-      //the following task could take few seconds
-      //we have installed event listener above to wait for it
-      //once it finishes, it returns value in a "result" attr
-      //which is a base64 url encoded string which acts as src for our image
       fileReader.readAsDataURL(file[0]);
     }
   },

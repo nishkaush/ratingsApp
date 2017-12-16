@@ -48,17 +48,6 @@ export default {
     };
   },
   methods: {
-    axiosRequestFunc(url) {
-      console.log(url);
-      axios
-        .get(url, { headers: { Authorization: "token" } })
-        .then(res => {
-          console.log(res.data);
-        })
-        .catch(err => {
-          console.log(err);
-        });
-    },
     search() {
       this.loading = true;
       if (!this.chosenCategory || !this.valueToSearch) {
@@ -74,6 +63,7 @@ export default {
         this.valueToSearch
       ) {
         let myurl = `https://4zp790teb4.execute-api.ap-southeast-2.amazonaws.com/dev/namesearch/${this.valueToSearch
+          .toUpperCase()
           .split(" ")
           .join("-")}`;
         this.$store.dispatch("getSearchResults", { url: myurl }).then(res => {

@@ -4,6 +4,7 @@ import Home from "@/components/Home";
 import Login from "@/components/User/Login";
 import Signup from "@/components/User/Signup";
 import Logout from "@/components/User/Logout";
+import Profile from "@/components/User/Profile";
 import SearchResults from "@/components/General/SearchResults";
 import SingleBusiness from "@/components/General/SingleBusiness/SingleBusiness";
 import RegisterBusiness from "@/components/General/RegisBusiness/RegisterBusiness";
@@ -32,6 +33,11 @@ export default new Router({
       path: "/logout",
       name: "Logout",
       component: Logout
+    },
+    {
+      path: "/profile",
+      name: "Profile",
+      component: Profile
     },
     {
       path: "/searchResults",

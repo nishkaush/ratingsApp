@@ -131,12 +131,23 @@ export default {
           });
           cognitoUser.authenticateUser(authencationDetails, {
             onSuccess(result) {
-              vm.loadingIcon = false;
               vm.alert = false;
               vm.confirmText = true;
-              let username = userPool.getCurrentUser().getUsername();
-              vm.$store.dispatch("commitHideLoginSignup");
-              vm.$router.push({ path: "/" });
+              let token = result.getIdToken().getJwtToken();
+              vm.$store
+                .dispatch("commitHideLoginSignup", {
+                  u: vm.signupData.username,
+                  e: vm.signupData.email,
+                  p: "",
+                  t: token
+                })
+                .then(res => {
+                  if (res === true) {
+                    vm.loadingIcon = false;
+                    return vm.$router.push({ path: "/profile" });
+                  }
+                  vm.loadingIcon = false;
+                });
             },
             onFailure(err) {
               vm.alert = true;

@@ -58,6 +58,7 @@ export default {
   },
   methods: {
     showSingleBusiness(id) {
+      this.$store.state.showResultsBtn = true;
       this.$router.push({ path: `/singleBusiness/${id}` });
     }
   },
@@ -70,18 +71,6 @@ export default {
         this.noResults = true;
       }
     }
-    // ratingCalc(reviewsArr) {
-    //   if (reviewsArr.length > 0) {
-    //     let myArr = reviewsArr.map(e => {
-    //       return e.rating;
-    //     });
-    //     let mysum = myArr.reduce((a, b) => {
-    //       return a + b;
-    //     });
-    //     return Math.round(mysum / reviewsArr.length);
-    //   }
-    //   return 0;
-    // }
   },
   filters: {
     uppercase(value) {

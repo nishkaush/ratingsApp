@@ -22,7 +22,6 @@ router.beforeEach((to, from, next) => {
     to.name !== "SingleBusiness" &&
     to.name !== "SearchResults"
   ) {
-    console.log("beforeeAch is running");
     let userPool = new CognitoUserPool({
       UserPoolId: "ap-southeast-2_4hP69ss9p",
       ClientId: "64f654vu8d5vn5fgma9qjct1ha"

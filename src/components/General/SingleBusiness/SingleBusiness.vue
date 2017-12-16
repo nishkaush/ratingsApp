@@ -8,7 +8,9 @@
     </v-flex>
   </v-layout>
   
-  <v-btn to="/searchResults"> <v-icon color="green">arrow_back</v-icon> Search Results</v-btn>
+  <v-btn to="/searchResults" v-if="showResultsButton"> 
+  <v-icon color="green">arrow_back</v-icon> 
+  Search Results</v-btn>
 
   <v-layout row v-if="showContent">
     <v-flex xs12 md10 offset-md1>
@@ -157,14 +159,16 @@ export default {
       if (response.loggedIn === true) {
         response.user.getSession((err, session) => {
           if (err) {
-            return console.log(err);
+            return (vm.snackbar = true);
           }
           this.token = session.getIdToken().getJwtToken();
           let payload = {
             rating: this.ratingInReview,
             businessID: this.$route.params.busId,
             reviewText: this.reviewText,
-            userPhoto: "https://picsum.photos/700/400/?random",
+            userPhoto:
+              vm.$store.state.userPhoto ||
+              "https://picsum.photos/700/400/?random",
             username: this.username,
             timestamp: Date.now()
           };
@@ -174,7 +178,6 @@ export default {
               token: vm.token
             })
             .then(res => {
-              console.log("now shutting off the modal");
               if (res === true) {
                 vm.loadingIcon = false;
                 vm.writeReview = false;
@@ -195,6 +198,9 @@ export default {
     }
   },
   computed: {
+    showResultsButton() {
+      return this.$store.state.showResultsBtn;
+    },
     info() {
       return this.$store.state.info;
     },
@@ -214,11 +220,9 @@ export default {
   },
   created() {
     this.$store.dispatch("getSingleBusiness", { url: this.url }).then(res => {
-      console.log(res);
       if (res === true) {
         return (this.showContent = true);
       }
-      console.log("can't fetch stuff");
     });
   },
   components: {
